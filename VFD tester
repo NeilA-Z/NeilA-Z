@@ -1,0 +1,95 @@
+
+import PySimpleGUI as sg
+from gpiozero import LED
+from widgetlords.pi_spi import *
+
+
+#change the buttons once you're on the pi
+def main():
+    init()
+    outputs = Mod2AO()
+    relay = LED(2)
+    start = LED(15)
+    run = LED(14)
+    auto = LED(3)
+
+    choices = range(4,21)
+
+    layout = [[sg.Frame(layout=[
+              [sg.Button('Hand', font=("Helvitica", 26), key='-H-', size=(15,7), button_color=('skyblue')),
+              sg.Button('Off', font=("Helvitica", 26), key='-O-', size=(15,7), button_color=('skyblue')),
+              sg.Button('Auto', font=("Helvitica", 26), key='-A-', size=(15,7), button_color=('skyblue '))]], title='Group', font=("Helvitica", 27), title_color='white'),
+              sg.Button('Run Enable', font=("Helvitica", 26), key='-R-', size=(15,7)),
+              sg.Button('Start/Stop', font=("Helvitica", 26), key='-S-', size=(15,7))],
+              [sg.Text('4 to 20 ma', font=("Helvitica", 26)), sg.Text('', key='-4to20OUTPUT-')],
+              [sg.T('4', font=("Helvitica", 26),size=(4,1), key='-LEFTma-', text_color=('black')),
+               sg.Slider((4,20), key='-4to20ma-', size=(160,100), orientation='h', enable_events=True, disable_number_display=True)],
+              [sg.Text('0 to 10 v', font=("Helvitica", 26)), sg.Text('', key='-0to10OUTPUT-')],
+              [sg.T('0',font=("Helvitica", 26) ,size=(4,1), key='-LEFTv-', text_color=('black')),
+               sg.Slider((0,10), key='-0to10v-', size=(160,100), orientation='h', enable_events=True, disable_number_display=True)],
+              [ sg.Button('Exit', font=("Helvitica", 26) , size=(12,1))],
+              [sg.Text('4 to 20ma', font=('Helvitica', 26)),sg.Combo(list(range(4,21)), size=(40,40))]]
+               
+              
+
+
+                     
+    window = sg.Window('Test center demo', layout, size=(2200, 1200), finalize=True)
+    window.Maximize()
+
+    down_s = False # check if start button is 'down'
+    down_r = False # check if run/enable button is 'down'
+
+    while True:
+        event, values = window.read()
+        print(event, values)
+        if event == sg.WIN_CLOSED or event == 'Exit':
+            break
+        
+        if event == '-H-':
+            relay.on() and auto.off()
+        elif event == '-O-':
+            relay.off()
+            auto.off()
+        elif event == '-A-':
+            auto.on() and relay.off()
+        elif event =='-S-':
+            down_s = not down_s
+            if down_s:
+                window['-S-'].update('start', button_color=('green'))
+                start.on()
+            else:
+                window['-S-'].update('stop', button_color=('red'))
+                start.off()
+        elif event =='-R-':
+            down_r = not down_r
+            if down_r:
+                window['-R-'].update('Run enable on', button_color=('green'))
+                run.on()
+            else:
+                window['-R-'].update('Run enable off', button_color=('red'))
+                run.off()
+        elif event == '-4to20ma-':
+            outputs.write_single(0, int(values["-4to20ma-"]*186.125))
+        elif event =='-0to10v-':
+            outputs.write_single(1, int(values["-0to10v-"]*372.3))
+            
+            
+            
+            
+            
+        window['-LEFTma-'].update(int(values['-4to20ma-']))
+        window['-LEFTv-'].update(int(values['-0to10v-']))
+        '''
+        if event == 'show 4 to 20ma':
+            sg.popup(f'outputs.write_single(0, {values["-4to20ma-"]})')
+        if event == 'show 0 to 10v':
+            sg.popup(f'outputs.write_single(0, {values["-0to10v-"]})')
+        '''
+        
+            
+    window.close()
+        
+if __name__ == '__main__':
+    main()
+            
